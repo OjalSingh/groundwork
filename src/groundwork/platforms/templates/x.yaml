@@ -1,0 +1,28 @@
+# Platform template. Everything below is a default meant to be replaced with your
+# own requirements. Hard limits are the platform's published caps; posting windows
+# are placeholders until you have your own analytics.
+name: x
+display_name: X
+formats:
+  thread:
+    description: An explainer thread. Each tweet must stand on its own.
+    parts: {min: 4, max: 8, max_chars: 280}
+    hook_max_chars: 280
+    hashtags: {max: 1}
+    citations: last_part      # sources go in the final tweet
+    design: {kind: header, size: [1600, 900], max_slides: 1}
+    guidance: |
+      Open with the concrete thing the reader will understand by the end.
+      One idea per tweet. Numbers only when a source states them.
+  single:
+    description: One standalone post.
+    parts: {min: 1, max: 1, max_chars: 280}
+    hook_max_chars: 280
+    hashtags: {max: 1}
+    citations: reply
+    design: {kind: none}
+    guidance: |
+      One sharp, sourced observation.
+posting_windows:
+  - {days: [mon, tue, wed, thu, fri], times: ["08:30", "12:30"]}
+max_posts_per_day: 2

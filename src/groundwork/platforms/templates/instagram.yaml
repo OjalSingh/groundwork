@@ -1,0 +1,24 @@
+name: instagram
+display_name: Instagram
+formats:
+  carousel:
+    description: A swipeable educational carousel with a caption.
+    parts: {min: 1, max: 4, max_chars: 2200, total_max_chars: 2200}
+    hook_max_chars: 125
+    hashtags: {max: 5, hard_max: 30}
+    citations: last_slide
+    design: {kind: carousel, size: [1080, 1350], min_slides: 5, max_slides: 10, hard_max_slides: 20}
+    guidance: |
+      Slide 1 is the promise, the last slide is the sources. Caption expands, never repeats.
+  quote:
+    description: A single quote card drawn from a source.
+    parts: {min: 1, max: 2, max_chars: 2200, total_max_chars: 2200}
+    hook_max_chars: 125
+    hashtags: {max: 5, hard_max: 30}
+    citations: caption
+    design: {kind: quote_card, size: [1080, 1350], max_slides: 1}
+    guidance: |
+      The quote must be verbatim from a source and credited on the card.
+posting_windows:
+  - {days: [mon, wed, fri], times: ["11:00", "19:00"]}
+max_posts_per_day: 1

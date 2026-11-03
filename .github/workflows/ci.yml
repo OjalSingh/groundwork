@@ -1,0 +1,41 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.10", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e '.[dev]'
+      - run: ruff check .
+      - run: pytest -q
+      - name: Offline smoke run
+        run: |
+          python - <<'PY'
+          import sys; sys.path.insert(0, "tests")
+          from pathlib import Path
+          import conftest
+          from groundwork.config import Config
+          from groundwork.llm.offline import OfflineWriter
+          from groundwork.pipeline import run
+          from groundwork.platforms.registry import load_templates
+          store = conftest.store.__wrapped__()
+          cfg = Config(collectors=[], use_web_search=False)
+          r = run("consistent hashing", ["x", "linkedin:carousel", "instagram", "substack"],
+                  cfg, load_templates(), OfflineWriter(), store, Path("runs"))
+          print((r.run_dir / "report.md").read_text())
+          assert all(p.status.value == "ready" for p in r.posts)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: matrix.python == '3.13'
+        with:
+          name: smoke-run
+          path: runs/

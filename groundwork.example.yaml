@@ -1,0 +1,24 @@
+# Copy to groundwork.yaml and edit. Every field is optional.
+voice: |
+  Plain and specific. Explain mechanisms with one concrete example.
+  First person is fine; no hype, no "game-changer".
+timezone: Asia/Kolkata
+collectors: [wikipedia, arxiv, hn]
+use_web_search: true          # Claude web search; needs ANTHROPIC_API_KEY
+sources_per_collector: 4
+rss_feeds:
+  - https://blog.bytebytego.com/feed
+  - https://netflixtechblog.com/feed
+extra_banned: [synergy, "thought leader"]
+templates_dir: templates      # your per-platform YAML overrides
+model: claude-opus-5-5
+effort: high
+max_revisions: 2
+theme:
+  background: "#0F172A"
+  foreground: "#F8FAFC"
+  accent: "#38BDF8"
+  muted: "#94A3B8"
+  heading_font: Inter
+  body_font: Inter
+  handle: "@yourhandle"
