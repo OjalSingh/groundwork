@@ -256,6 +256,10 @@ def render_cmd(cfg: Config, post_json: Path, sources_json: Path, theme_name):
     _, fmt = _templates(cfg)[post.draft.platform].format(post.draft.format)
     design_post(post, fmt, SourceStore.load(sources_json), cfg, run_dir)
     post_json.write_text(post.model_dump_json(indent=2))
+    from groundwork.pipeline import needs_input_md
+    siblings = [Post.model_validate(json.loads(f.read_text()))
+                for f in sorted(post_json.parent.glob("*.json"))]
+    (run_dir / "needs_input.md").write_text(needs_input_md(siblings))
     click.echo(f"Rendered {len(post.image_paths)} file(s) into {run_dir / 'designs'}")
 
 
