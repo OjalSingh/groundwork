@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>groundwork</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">groundwork <span class="muted">researched posts, checked before they ship</span></div>
+  <div id="keyBadge" class="badge"></div>
+</header>
+
+<div class="layout">
+  <aside class="side">
+    <button id="newTopicBtn" class="primary wide">+ New topic</button>
+    <h3>Topics</h3>
+    <ul id="topicList" class="topics"></ul>
+  </aside>
+
+  <main>
+    <section id="empty" class="card">
+      <h2>Start with a topic</h2>
+      <p>Pick something you can judge, add two or three good links (docs, engineering blogs,
+        papers), and the pipeline does the rest: fetch, write, check every quote, design, schedule.</p>
+    </section>
+
+    <section id="newTopic" class="card hidden">
+      <h2>New topic</h2>
+      <label>Topic <input id="ntTopic" placeholder="how DNS caching works"></label>
+      <label>Brief (optional) <input id="ntBrief" placeholder="What should the reader take away?"></label>
+      <label>Source links, one per line
+        <textarea id="ntUrls" rows="4" placeholder="https://..."></textarea></label>
+      <label class="check"><input type="checkbox" id="ntCollectors" checked> Also search Wikipedia, arXiv and Hacker News</label>
+      <label class="check"><input type="checkbox" id="ntWeb"> Also use Claude web search (needs API key)</label>
+      <button id="ntGo" class="primary">Fetch sources</button>
+      <span id="ntStatus" class="muted"></span>
+    </section>
+
+    <div id="topicView" class="hidden">
+      <div class="topicHead">
+        <h2 id="tvTitle"></h2>
+        <p id="tvBrief" class="muted"></p>
+      </div>
+      <nav class="tabs">
+        <button data-tab="sources" class="active">1. Sources</button>
+        <button data-tab="write">2. Write</button>
+        <button data-tab="design">3. Design</button>
+        <button data-tab="posts">4. Posts</button>
+      </nav>
+
+      <section data-panel="sources" class="card">
+        <h3>Sources <span class="muted">(every claim must quote one of these)</span></h3>
+        <table class="src"><thead><tr><th>Id</th><th>Title</th><th>Publisher</th><th>Text</th><th></th></tr></thead>
+          <tbody id="srcRows"></tbody></table>
+        <details>
+          <summary>Add more links</summary>
+          <textarea id="moreUrls" rows="3" placeholder="https://..."></textarea>
+          <button id="moreGo">Fetch and add</button> <span id="moreStatus" class="muted"></span>
+        </details>
+      </section>
+
+      <section data-panel="write" class="card hidden">
+        <h3>Write a post</h3>
+        <div class="row">
+          <label>Platform and format <select id="target"></select></label>
+          <button id="genBtn" class="primary">Write with Claude</button>
+        </div>
+        <div class="steps">
+          <div>
+            <h4>Free: use any chatbot</h4>
+            <ol>
+              <li><button id="promptBtn">Copy prompt</button> and paste it into a chatbot.</li>
+              <li>Paste its whole reply here and check it.</li>
+            </ol>
+            <textarea id="reply" rows="8" placeholder="Paste the chatbot's reply (the JSON)"></textarea>
+            <button id="checkBtn" class="primary">Check reply</button>
+          </div>
+          <div id="result" class="result muted">Results of the checks will show here.</div>
+        </div>
+        <h4>Drafts in this topic</h4>
+        <div id="draftList"></div>
+      </section>
+
+      <section data-panel="design" class="card hidden">
+        <h3>Theme</h3>
+        <div class="designGrid">
+          <div class="controls">
+            <label>Start from preset <select id="preset"></select></label>
+            <div class="colors">
+              <label>Background <input type="color" id="c_background"></label>
+              <label>Text <input type="color" id="c_foreground"></label>
+              <label>Accent <input type="color" id="c_accent"></label>
+              <label>Muted <input type="color" id="c_muted"></label>
+            </div>
+            <label>Heading font (Canva name) <input id="heading_font"></label>
+            <label>Body font (Canva name) <input id="body_font"></label>
+            <label>Preview font style <select id="font_family"><option>sans</option><option>serif</option><option>mono</option></select></label>
+            <label>Alignment <select id="align"><option>left</option><option>center</option></select></label>
+            <label>Accent shape <select id="accent_style"><option>bar</option><option>underline</option><option>block</option><option>none</option></select></label>
+            <label>Cover slide <select id="cover_style"><option>same</option><option>inverted</option></select></label>
+            <label class="check"><input type="checkbox" id="slide_counter"> Slide numbers</label>
+            <label>Handle <input id="handle" placeholder="@yourhandle"></label>
+            <label>Save as (optional name) <input id="saveAs" placeholder="my-brand"></label>
+            <button id="saveTheme" class="primary">Use this theme</button>
+            <span id="themeStatus" class="muted"></span>
+          </div>
+          <div>
+            <img id="previewImg" alt="Theme preview: three sample slides">
+            <ul id="themeWarnings" class="warn"></ul>
+          </div>
+        </div>
+      </section>
+
+      <section data-panel="posts" class="card hidden">
+        <div class="row">
+          <h3>Posts</h3>
+          <button id="buildBtn" class="primary">Build designs and schedule</button>
+          <a id="icsLink" class="hidden" download>Download calendar (.ics)</a>
+        </div>
+        <p class="muted">Builds every draft in this topic with the current theme.</p>
+        <div id="postList"></div>
+      </section>
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast hidden"></div>
+<script src="/static/app.js"></script>
+</body>
+</html>

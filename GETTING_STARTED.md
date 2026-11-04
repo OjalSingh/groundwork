@@ -28,6 +28,12 @@ You give it a topic and the platforms you want. It then does six things in order
 
 What it does not do: it does not post for you. You publish by hand from the generated files.
 
+## Easiest way: the local app
+
+After installing (below), run `groundwork ui`. A browser tab opens with four steps: add
+source links, write (copy the prompt into any chatbot and paste the reply back), pick a
+theme, then build. Everything else on this page is the same thing from the command line.
+
 ## Test it on your PC
 
 You need Python 3.10 or newer and git.

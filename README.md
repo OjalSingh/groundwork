@@ -113,6 +113,19 @@ groundwork attach runs/<run>/posts/<post>.json --slide 3 --image ring-diagram.pn
 groundwork render runs/<run>/posts/<post>.json runs/<run>/sources.json [--theme paper]
 ```
 
+## The local web UI
+
+```bash
+groundwork ui        # opens http://127.0.0.1:8765 (localhost only)
+```
+
+Four tabs per topic: **Sources** (paste links, see what was fetched, drop weak ones),
+**Write** (copy the prompt for any chatbot and paste the reply back, or one click with a
+Claude API key; check results and a ready-to-paste fix message appear inline, and you can
+upload images for slides that need them), **Design** (presets, colours, fonts, layout with a
+live preview), **Posts** (build, slide gallery, copy-paste text, Canva steps, calendar
+download). Everything is saved under `./workspace/<topic>/`, so the CLI can read it too.
+
 ## Free mode: any chatbot as the writer
 
 No API key or credits needed. The checks, designs and scheduling are identical.

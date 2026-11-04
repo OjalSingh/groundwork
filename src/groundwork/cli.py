@@ -343,5 +343,26 @@ def render_cmd(cfg: Config, post_json: Path, sources_json: Path, theme_name):
     click.echo(f"Rendered {len(post.image_paths)} file(s) into {run_dir / 'designs'}")
 
 
+
+@main.command()
+@click.option("--port", default=8765, show_default=True)
+@click.option("--workspace", type=click.Path(path_type=Path), default=Path("workspace"),
+              show_default=True, help="Where topics, drafts and builds are kept.")
+@click.option("--no-browser", is_flag=True, help="Don't open a browser tab.")
+@click.pass_obj
+def ui(cfg: Config, port, workspace, no_browser):
+    """Open the local web UI (localhost only)."""
+    import threading
+    import webbrowser
+
+    from groundwork.ui.app import create_app
+
+    url = f"http://127.0.0.1:{port}"
+    click.echo(f"groundwork UI running at {url}  (Ctrl+C to stop)")
+    if not no_browser:
+        threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    create_app(cfg, workspace).run(host="127.0.0.1", port=port, debug=False)
+
+
 if __name__ == "__main__":
     main()

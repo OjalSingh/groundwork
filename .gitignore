@@ -6,3 +6,6 @@ __pycache__/
 runs/
 sources.json
 groundwork.yaml
+workspace/
+themes/
+.groundwork-preview/
