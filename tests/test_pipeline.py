@@ -74,3 +74,9 @@ def test_no_sources_no_posts(tmp_path, templates, cfg):
     from groundwork.research.store import SourceStore
     result = run("anything", ["x"], cfg, templates, OfflineWriter(), SourceStore(), tmp_path)
     assert result.posts == [] and "No usable sources" in (result.run_dir / "report.md").read_text()
+
+
+def test_slugify_cuts_at_word_boundary():
+    from groundwork.pipeline import slugify
+    assert slugify("Consistent hashing in load balancers", 30) == "consistent-hashing-in-load"
+    assert slugify("x" * 80, 10) == "x" * 10 and slugify("!!!") == "run"

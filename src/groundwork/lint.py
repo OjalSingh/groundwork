@@ -39,7 +39,8 @@ SLOP_RULES: list[Rule] = [
         "the world of|more than ever"),
         "Filler phrase. Say the specific thing instead."),
     Rule("slop.buzzword", _w("leverage|synergy|robust|cutting-edge|seamless|seamlessly|"
-                             "landscape|holistic|empower|transformative|deep dive|10x"),
+                             "landscape|holistic|empower|transformative|deep dive|"
+                             "10x engineer|10x developer"),
          "Buzzword. Use a plain word or a concrete detail.", Severity.WARNING),
     Rule("slop.unsourced_authority", _w(
         "studies show|research shows|experts say|science says|data shows|statistics show|"
@@ -51,8 +52,8 @@ SLOP_RULES: list[Rule] = [
     Rule("slop.not_x_but_y", r"(?i)\b(?:it's|it is|this is)\s+not\s+(?:just\s+)?[^.?!]{1,40}"
          r"[,;]\s*(?:it's|it is|but)\b", "\"It's not X, it's Y\" construction. State Y directly.",
          Severity.WARNING),
-    Rule("slop.fake_suspense", r"(?m)(?:^|\.\s)(?:The (?:result|kicker|catch|twist|answer|truth)|"
-         r"Here's the (?:thing|kicker|catch))\s*[?:]", "Fake suspense beat. Just say it.",
+    Rule("slop.fake_suspense", r"(?m)(?:^|\.\s)(?:The (?:result|kicker|twist|answer|truth)\s*\?|"
+         r"Here's the (?:thing|kicker|catch)\s*[?:])", "Fake suspense beat. Just say it.",
          Severity.WARNING),
 ]
 

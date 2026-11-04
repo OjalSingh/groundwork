@@ -50,3 +50,10 @@ def test_carousel_needs_slides(templates):
     d.design.slides = [Slide(body="ok")] * 6
     d.design.alt_text = "alt"
     assert "format.slide_count" not in checks(lint_draft(d, fmt))
+
+
+def test_factual_speedups_and_honest_headings_are_not_slop():
+    text = "Maglev builds tables about 10x faster. The catch: it is less stable."
+    assert lint_slop(text) == []
+    assert "slop.buzzword" in checks(lint_slop("Be a 10x engineer."))
+    assert "slop.fake_suspense" in checks(lint_slop("We tried it. The result? Outages."))

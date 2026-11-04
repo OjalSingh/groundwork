@@ -31,8 +31,12 @@ from groundwork.schedule import schedule, to_csv, to_ics
 log = logging.getLogger(__name__)
 
 
-def slugify(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:60] or "run"
+def slugify(text: str, limit: int = 60) -> str:
+    """Lowercase, hyphenated, cut at a word boundary so ids don't end mid-word."""
+    slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
+    if len(slug) > limit:
+        slug = slug[:limit].rsplit("-", 1)[0] if "-" in slug[:limit] else slug[:limit]
+    return slug or "run"
 
 
 def research(topic: str, cfg: Config, seed_urls: list[str] | None = None,
@@ -146,7 +150,7 @@ def run(topic: str, targets: list[str], cfg: Config, templates: dict[str, Platfo
 
     for tpl, fmt_name, fmt in parse_targets(targets, templates):
         req = WriteRequest(topic, brief, cfg.voice, store, tpl, fmt_name, fmt)
-        post = produce(req, writer, cfg, f"{tpl.name}-{fmt_name}-{slugify(topic)[:30]}")
+        post = produce(req, writer, cfg, f"{tpl.name}-{fmt_name}-{slugify(topic, 30)}")
         if before_design:
             before_design(post)  # e.g. ask the user for images
         design_post(post, fmt, store, cfg, run_dir)

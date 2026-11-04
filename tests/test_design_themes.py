@@ -159,3 +159,10 @@ def test_theme_cli(tmp_path, monkeypatch):
     cfg = Config.load(tmp_path / "groundwork.yaml")
     assert cfg.theme.name == "brand" and cfg.theme.accent == "#0F766E" and cfg.theme.handle == "@me"
     assert preview_sheet(cfg.theme, tmp_path / "x.png").exists()
+
+
+def test_switching_theme_keeps_handle(tmp_path, store, templates, cfg):
+    from groundwork.cli import _switch_theme
+    cfg.theme.handle = "@me"
+    assert _switch_theme(cfg, "paper").handle == "@me"
+    assert _switch_theme(cfg, "paper").background == "#FAF6EE"

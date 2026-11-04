@@ -17,6 +17,12 @@ def _themes_dir(cfg: Config) -> Path | None:
     return Path(cfg.themes_dir) if cfg.themes_dir else None
 
 
+def _switch_theme(cfg: Config, name: str):
+    """Change preset but keep who you are: handle and logo carry over."""
+    keep = {"handle": cfg.theme.handle or None, "logo": cfg.theme.logo}
+    return resolve_theme(name, keep, _themes_dir(cfg))
+
+
 def _parse_sets(pairs) -> dict:
     out = {}
     for pair in pairs:
@@ -98,7 +104,7 @@ def run_cmd(cfg: Config, topic, targets, brief, urls, sources_file, offline, dra
     asker = ClickAsker()
     before_design = None
     if theme_name:
-        cfg.theme = resolve_theme(theme_name, None, _themes_dir(cfg))
+        cfg.theme = _switch_theme(cfg, theme_name)
     if ask:
         click.echo("Design questions (press Enter to keep the default).")
         cfg.theme = run_wizard(asker, out / "preview", start=cfg.theme,
@@ -244,7 +250,7 @@ def render_cmd(cfg: Config, post_json: Path, sources_json: Path, theme_name):
     from groundwork.models import Post
     from groundwork.pipeline import design_post
     if theme_name:
-        cfg.theme = resolve_theme(theme_name, None, _themes_dir(cfg))
+        cfg.theme = _switch_theme(cfg, theme_name)
     post = Post.model_validate(json.loads(post_json.read_text()))
     run_dir = post_json.parent.parent
     _, fmt = _templates(cfg)[post.draft.platform].format(post.draft.format)
