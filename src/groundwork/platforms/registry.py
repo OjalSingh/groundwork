@@ -72,7 +72,7 @@ def load_templates(extra_dir: Path | None = None) -> dict[str, PlatformTemplate]
     dirs = [BUILTIN_DIR] + ([extra_dir] if extra_dir else [])
     for d in dirs:
         for path in sorted(d.glob("*.y*ml")):
-            tpl = PlatformTemplate.model_validate(yaml.safe_load(path.read_text()))
+            tpl = PlatformTemplate.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
             for w in tpl.posting_windows:
                 bad = [x for x in w.days if x not in DAYS]
                 if bad:

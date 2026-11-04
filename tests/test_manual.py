@@ -50,23 +50,23 @@ def test_prompt_then_import_roundtrip(tmp_path, store, monkeypatch):
     assert r.exit_code == 0, r.output
     assert (tmp_path / "manual" / "prompt-x-thread.md").exists()
 
-    (tmp_path / "good.txt").write_text("```json\n" + reply() + "\n```")
+    (tmp_path / "good.txt").write_text("```json\n" + reply() + "\n```", encoding="utf-8")
     r = runner.invoke(main, ["import", "good.txt", "--topic", "rings", "--sources",
                              "sources.json"])
     assert r.exit_code == 0, r.output
     assert "ready" in r.output and (tmp_path / "runs").exists()
 
-    (tmp_path / "bad.txt").write_text(reply(quote="Keys move to the nearest server on the ring."))
+    (tmp_path / "bad.txt").write_text(reply(quote="Keys move to the nearest server on the ring."), encoding="utf-8")
     r = runner.invoke(main, ["import", "bad.txt", "--topic", "rings2", "--sources", "sources.json"])
     assert r.exit_code == 1 and "needs a fix" in r.output
     fixes = list((tmp_path / "runs").glob("*rings2*/posts/fix-*.md"))
-    assert fixes and "grounding.quote_not_found" in fixes[0].read_text()
-    assert "corrected JSON" in fixes[0].read_text()
+    assert fixes and "grounding.quote_not_found" in fixes[0].read_text(encoding="utf-8")
+    assert "corrected JSON" in fixes[0].read_text(encoding="utf-8")
 
 
 def test_import_unusable_reply_tells_you_what_to_paste_back(tmp_path, store, monkeypatch):
     monkeypatch.chdir(tmp_path)
     store.save(tmp_path / "sources.json")
-    (tmp_path / "junk.txt").write_text("Sorry, I can't help with that.")
+    (tmp_path / "junk.txt").write_text("Sorry, I can't help with that.", encoding="utf-8")
     r = CliRunner().invoke(main, ["import", "junk.txt", "--topic", "t", "--sources", "sources.json"])
     assert r.exit_code == 1 and "Paste this back" in r.output

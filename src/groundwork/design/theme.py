@@ -138,7 +138,7 @@ def load_presets(extra_dir: Path | None = None) -> dict[str, Theme]:
         if not d or not d.exists():
             continue
         for path in sorted(d.glob("*.y*ml")):
-            raw = yaml.safe_load(path.read_text()) or {}
+            raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
             raw.setdefault("name", path.stem)
             presets[raw["name"]] = Theme.model_validate(raw)
     return presets
@@ -160,4 +160,4 @@ def resolve_theme(preset: str | None, overrides: dict | None = None,
 def save_theme(theme: Theme, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     data = theme.model_dump(exclude_none=True)
-    path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True))
+    path.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")

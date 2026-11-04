@@ -44,12 +44,12 @@ class SourceStore:
         return stored
 
     def save(self, path: Path) -> None:
-        path.write_text(json.dumps([s.model_dump(mode="json") for s in self], indent=2))
+        path.write_text(json.dumps([s.model_dump(mode="json") for s in self], indent=2), encoding="utf-8")
 
     @classmethod
     def load(cls, path: Path) -> SourceStore:
         store = cls()
-        for raw in json.loads(path.read_text()):
+        for raw in json.loads(path.read_text(encoding="utf-8")):
             src = Source.model_validate(raw)
             store._by_url[canonical_url(src.url)] = src
         return store

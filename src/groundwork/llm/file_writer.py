@@ -17,7 +17,7 @@ from groundwork.models import Draft, Finding
 
 class FileWriter:
     def __init__(self, path: Path):
-        raw = json.loads(Path(path).read_text())
+        raw = json.loads(Path(path).read_text(encoding="utf-8"))
         self.queues: dict[str, list[Draft]] = {
             key: [Draft.model_validate(d) for d in (v if isinstance(v, list) else [v])]
             for key, v in raw.items()

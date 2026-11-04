@@ -173,7 +173,7 @@ def save_wizard_result(theme: Theme, config_path: Path, save_as: str | None,
                        themes_dir: Path) -> list[Path]:
     """Persist the theme: an optional named preset file, and groundwork.yaml pointing at it."""
     written = []
-    raw = yaml.safe_load(config_path.read_text()) if config_path.exists() else {}
+    raw = yaml.safe_load(config_path.read_text(encoding="utf-8")) if config_path.exists() else {}
     raw = raw or {}
     presets = load_presets(themes_dir)
     if save_as:
@@ -195,7 +195,7 @@ def save_wizard_result(theme: Theme, config_path: Path, save_as: str | None,
         raw["theme"] = diff
         if raw["theme_preset"] is None:
             raw.pop("theme_preset")
-    config_path.write_text(yaml.safe_dump(raw, sort_keys=False, allow_unicode=True))
+    config_path.write_text(yaml.safe_dump(raw, sort_keys=False, allow_unicode=True), encoding="utf-8")
     written.append(config_path)
     return written
 

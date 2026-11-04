@@ -27,10 +27,10 @@ def test_offline_end_to_end(tmp_path, store, templates, cfg):
     assert Image.open(d / pngs[0]).size == (1080, 1350)
     li = next(p for p in result.posts if p.id.startswith("linkedin-carousel"))
     assert any(x.endswith(".pdf") for x in li.image_paths)
-    guide = (d / ig.canva_guide_path).read_text()
+    guide = (d / ig.canva_guide_path).read_text(encoding="utf-8")
     assert "1080 x 1350 px" in guide and "Sources" in guide
-    assert "BEGIN:VEVENT" in (d / "schedule.ics").read_text()
-    assert "needs_review" not in (d / "report.md").read_text().split("|---|")[-1].split("Posts marked")[0]
+    assert "BEGIN:VEVENT" in (d / "schedule.ics").read_text(encoding="utf-8")
+    assert "needs_review" not in (d / "report.md").read_text(encoding="utf-8").split("|---|")[-1].split("Posts marked")[0]
 
 
 class LyingWriter(OfflineWriter):
@@ -73,10 +73,34 @@ def test_unfixable_post_is_not_scheduled(tmp_path, store, templates, cfg):
 def test_no_sources_no_posts(tmp_path, templates, cfg):
     from groundwork.research.store import SourceStore
     result = run("anything", ["x"], cfg, templates, OfflineWriter(), SourceStore(), tmp_path)
-    assert result.posts == [] and "No usable sources" in (result.run_dir / "report.md").read_text()
+    assert result.posts == [] and "No usable sources" in (result.run_dir / "report.md").read_text(encoding="utf-8")
 
 
 def test_slugify_cuts_at_word_boundary():
     from groundwork.pipeline import slugify
     assert slugify("Consistent hashing in load balancers", 30) == "consistent-hashing-in-load"
     assert slugify("x" * 80, 10) == "x" * 10 and slugify("!!!") == "run"
+
+
+def test_windows_safe_output(tmp_path, store, templates, cfg):
+    """Non-ASCII text round-trips as UTF-8 and the .ics keeps clean CRLF line endings."""
+    class Fancy(OfflineWriter):
+        def write(self, req):
+            d = super().write(req)
+            d.title = "Ringe – “Konsistenz” 🧵"
+            return d
+
+    result = run("consistent hashing", ["x:thread"], cfg, templates, Fancy(), store, tmp_path,
+                 start=START)
+    post_md = next((result.run_dir / "posts").glob("*.md")).read_text(encoding="utf-8")
+    assert "Ringe – “Konsistenz” 🧵" in post_md
+    ics = (result.run_dir / "schedule.ics").read_bytes()
+    assert b"\r\r\n" not in ics and ics.count(b"\r\n") == ics.count(b"\n")
+
+
+def test_unknown_timezone_has_a_helpful_error(templates):
+    import pytest
+
+    from groundwork.schedule import schedule
+    with pytest.raises(ValueError, match="tzdata"):
+        schedule([], templates, "Mars/Olympus")

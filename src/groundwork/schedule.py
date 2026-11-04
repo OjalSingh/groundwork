@@ -6,7 +6,7 @@ import csv
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from groundwork.models import Post, PostStatus
 from groundwork.platforms.registry import DAYS, PlatformTemplate
@@ -27,7 +27,12 @@ def _slots(tpl: PlatformTemplate, start: datetime, tz: ZoneInfo, horizon_days: i
 def schedule(posts: list[Post], templates: dict[str, PlatformTemplate], tz_name: str,
              start: datetime | None = None, taken: list[datetime] | None = None) -> list[Post]:
     """Give each READY post the next free slot on its platform. Others stay unscheduled."""
-    tz = ZoneInfo(tz_name)
+    try:
+        tz = ZoneInfo(tz_name)
+    except ZoneInfoNotFoundError as exc:
+        raise ValueError(
+            f"Unknown timezone {tz_name!r}. Use a name like 'Asia/Kolkata' or 'UTC' "
+            "(on Windows, `pip install tzdata` provides the database).") from exc
     start = start or datetime.now(timezone.utc)
     per_day: dict[tuple[str, date], int] = defaultdict(int)
     used = set(taken or [])
@@ -76,7 +81,7 @@ def to_ics(posts: list[Post], run_dir: Path) -> str:
 
 
 def to_csv(posts: list[Post], path: Path) -> None:
-    with path.open("w", newline="") as fh:
+    with path.open("w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["post_id", "platform", "format", "status", "scheduled_for", "hook", "images"])
         for p in posts:

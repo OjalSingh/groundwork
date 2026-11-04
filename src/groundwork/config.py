@@ -41,7 +41,7 @@ class Config(BaseModel):
             path = default if default.exists() else None
         if path is None:
             return cls()
-        raw = yaml.safe_load(path.read_text()) or {}
+        raw = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
         if raw.get("themes_dir") and not Path(raw["themes_dir"]).is_absolute():
             raw["themes_dir"] = str((path.parent / raw["themes_dir"]).resolve())
         cfg = cls.model_validate(raw)

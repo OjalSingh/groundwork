@@ -14,13 +14,13 @@ name: x
 display_name: X (custom)
 formats:
   hot_take: {description: d, parts: {min: 1, max: 1, max_chars: 200}}
-""")
+""", encoding="utf-8")
     (tmp_path / "threads.yaml").write_text("""
 name: threads
 display_name: Threads
 formats:
   post: {description: d, parts: {min: 1, max: 1, max_chars: 500}}
-""")
+""", encoding="utf-8")
     t = load_templates(tmp_path)
     assert list(t["x"].formats) == ["hot_take"]
     assert "threads" in t
@@ -32,7 +32,7 @@ name: bad
 display_name: Bad
 formats: {post: {description: d, parts: {max_chars: 10}}}
 posting_windows: [{days: [funday], times: ["09:00"]}]
-""")
+""", encoding="utf-8")
     with pytest.raises(ValueError):
         load_templates(tmp_path)
 

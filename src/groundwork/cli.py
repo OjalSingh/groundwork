@@ -129,7 +129,7 @@ def run_cmd(cfg: Config, topic, targets, brief, urls, sources_file, offline, dra
         writer = ClaudeWriter(cfg.model, cfg.effort)
     result = run(topic, list(targets), cfg, templates, writer, store, out, brief,
                  before_design=before_design)
-    click.echo((result.run_dir / "report.md").read_text())
+    click.echo((result.run_dir / "report.md").read_text(encoding="utf-8"))
     click.echo(f"Output: {result.run_dir}")
 
 
@@ -138,7 +138,7 @@ def run_cmd(cfg: Config, topic, targets, brief, urls, sources_file, offline, dra
 @click.pass_obj
 def lint(cfg: Config, path: Path):
     """Run the slop linter over any text file. Exits 1 on errors."""
-    findings = lint_slop(path.read_text(), cfg.extra_banned)
+    findings = lint_slop(path.read_text(encoding="utf-8"), cfg.extra_banned)
     for f in findings:
         click.echo(f"{f.severity.value:7} {f.check:28} {f.message}  {f.excerpt!r}")
     raise SystemExit(1 if any(f.severity.value == "error" for f in findings) else 0)
@@ -154,7 +154,7 @@ def check_cmd(cfg: Config, post_json: Path, sources_json: Path):
     from groundwork.lint import lint_draft
     from groundwork.models import Post
 
-    post = Post.model_validate(json.loads(post_json.read_text()))
+    post = Post.model_validate(json.loads(post_json.read_text(encoding="utf-8")))
     store = SourceStore.load(sources_json)
     _, fmt = _templates(cfg)[post.draft.platform].format(post.draft.format)
     findings = check_grounding(post.draft, store) + lint_draft(post.draft, fmt, cfg.extra_banned)
@@ -189,7 +189,7 @@ def prompt_cmd(cfg: Config, topic, targets, brief, urls, sources_file, out):
     for tpl, fmt_name, fmt in parse_targets(list(targets), templates):
         req = WriteRequest(topic, brief, cfg.voice, store, tpl, fmt_name, fmt)
         path = out / f"prompt-{tpl.name}-{fmt_name}.md"
-        path.write_text(build_prompt(req))
+        path.write_text(build_prompt(req), encoding="utf-8")
         click.echo(f"Wrote {path}")
     click.echo(
         "\nNext: paste each prompt into a chatbot, save its reply as a text file, then run:\n"
@@ -213,7 +213,7 @@ def import_cmd(cfg: Config, replies, topic, sources_file, theme_name, out):
     drafts, problems = {}, 0
     for path in replies:
         try:
-            d = parse_draft(path.read_text())
+            d = parse_draft(path.read_text(encoding="utf-8"))
         except ValueError as exc:
             problems += 1
             click.echo(f"{path}: {exc}.\n  Paste this back into the chat: \"Your reply was not "
@@ -231,11 +231,11 @@ def import_cmd(cfg: Config, replies, topic, sources_file, theme_name, out):
     cfg.max_revisions = 0  # the chatbot does the revising: we hand back the findings instead
     result = run(topic, list(drafts), cfg, templates, StaticWriter(drafts),
                  SourceStore.load(sources_file), out)
-    click.echo((result.run_dir / "report.md").read_text())
+    click.echo((result.run_dir / "report.md").read_text(encoding="utf-8"))
     for post in result.posts:
         if post.errors:
             fix = result.run_dir / "posts" / f"fix-{post.id}.md"
-            fix.write_text(fix_message(post.findings))
+            fix.write_text(fix_message(post.findings), encoding="utf-8")
             click.echo(f"{post.id} needs a fix: paste {fix} into the same chat, save the new "
                        "reply, and import again.")
             problems += 1
@@ -311,12 +311,12 @@ def design(cfg: Config, cfg_path, tdir):
 def attach(post_json: Path, slide_no: int, image: Path):
     """Attach your own image (diagram, icon, photo) to a slide, then run `render`."""
     from groundwork.models import Post
-    post = Post.model_validate(json.loads(post_json.read_text()))
+    post = Post.model_validate(json.loads(post_json.read_text(encoding="utf-8")))
     slides = post.draft.design.slides
     if not 1 <= slide_no <= len(slides):
         raise click.BadParameter(f"slide must be 1 to {len(slides)}")
     slides[slide_no - 1].image = str(image.resolve())
-    post_json.write_text(post.model_dump_json(indent=2))
+    post_json.write_text(post.model_dump_json(indent=2), encoding="utf-8")
     click.echo(f"Attached to slide {slide_no}. Now run: groundwork render {post_json} sources.json")
 
 
@@ -331,15 +331,15 @@ def render_cmd(cfg: Config, post_json: Path, sources_json: Path, theme_name):
     from groundwork.pipeline import design_post
     if theme_name:
         cfg.theme = _switch_theme(cfg, theme_name)
-    post = Post.model_validate(json.loads(post_json.read_text()))
+    post = Post.model_validate(json.loads(post_json.read_text(encoding="utf-8")))
     run_dir = post_json.parent.parent
     _, fmt = _templates(cfg)[post.draft.platform].format(post.draft.format)
     design_post(post, fmt, SourceStore.load(sources_json), cfg, run_dir)
-    post_json.write_text(post.model_dump_json(indent=2))
+    post_json.write_text(post.model_dump_json(indent=2), encoding="utf-8")
     from groundwork.pipeline import needs_input_md
-    siblings = [Post.model_validate(json.loads(f.read_text()))
+    siblings = [Post.model_validate(json.loads(f.read_text(encoding="utf-8")))
                 for f in sorted(post_json.parent.glob("*.json"))]
-    (run_dir / "needs_input.md").write_text(needs_input_md(siblings))
+    (run_dir / "needs_input.md").write_text(needs_input_md(siblings), encoding="utf-8")
     click.echo(f"Rendered {len(post.image_paths)} file(s) into {run_dir / 'designs'}")
 
 

@@ -5,10 +5,18 @@ on:
   pull_request:
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
     strategy:
+      fail-fast: false
       matrix:
-        python: ["3.10", "3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ["3.10", "3.13"]
+        include:
+          - os: windows-latest
+            python: "3.14"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -35,7 +43,7 @@ jobs:
           assert all(p.status.value == "ready" for p in r.posts)
           PY
       - uses: actions/upload-artifact@v4
-        if: matrix.python == '3.13'
+        if: matrix.python == '3.13' && matrix.os == 'ubuntu-latest'
         with:
           name: smoke-run
           path: runs/

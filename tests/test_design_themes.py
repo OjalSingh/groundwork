@@ -42,7 +42,7 @@ def test_contrast_and_bad_colour():
 
 
 def test_resolve_overrides_and_user_presets(tmp_path):
-    (tmp_path / "brand.yaml").write_text("name: brand\nbackground: '#101010'\naccent: '#FF00AA'\n")
+    (tmp_path / "brand.yaml").write_text("name: brand\nbackground: '#101010'\naccent: '#FF00AA'\n", encoding="utf-8")
     t = resolve_theme("brand", {"handle": "@me"}, tmp_path)
     assert (t.accent, t.handle, t.background) == ("#FF00AA", "@me", "#101010")
     assert resolve_theme("paper", {"accent": "#0F766E"}).accent == "#0F766E"
@@ -52,7 +52,7 @@ def test_resolve_overrides_and_user_presets(tmp_path):
 
 def test_config_preset_with_overrides(tmp_path):
     f = tmp_path / "groundwork.yaml"
-    f.write_text("theme_preset: forest\ntheme: {handle: '@x', accent: '#FFFFFF'}\n")
+    f.write_text("theme_preset: forest\ntheme: {handle: '@x', accent: '#FFFFFF'}\n", encoding="utf-8")
     cfg = Config.load(f)
     assert cfg.theme.background == "#0E2A1F" and cfg.theme.accent == "#FFFFFF"
     assert cfg.theme.handle == "@x"
@@ -94,9 +94,9 @@ def test_wizard_scripted_flow_and_save(tmp_path):
     assert any("contrast" in line for line in ask.log)
     assert (tmp_path / "pv" / "theme-preview.png").exists()
     cfg_path = tmp_path / "groundwork.yaml"
-    cfg_path.write_text("timezone: Asia/Kolkata\n")
+    cfg_path.write_text("timezone: Asia/Kolkata\n", encoding="utf-8")
     save_wizard_result(theme, cfg_path, "mine", tmp_path / "themes")
-    raw = yaml.safe_load(cfg_path.read_text())
+    raw = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
     assert raw["timezone"] == "Asia/Kolkata" and raw["theme_preset"] == "mine"
     assert Config.load(cfg_path).theme.handle == "@ojal"
 
@@ -129,7 +129,7 @@ def test_needs_input_and_attach_render_loop(tmp_path, store, templates, cfg):
     runs = tmp_path / "runs"
     result = run("consistent hashing", ["instagram:carousel"], cfg, templates, WithVisual(), store,
                  runs)
-    needs = (result.run_dir / "needs_input.md").read_text()
+    needs = (result.run_dir / "needs_input.md").read_text(encoding="utf-8")
     assert "slide 2" in needs and "groundwork attach" in needs
     post_json = result.run_dir / "posts" / f"{result.posts[0].id}.json"
     store.save(result.run_dir / "sources.json")
@@ -141,7 +141,7 @@ def test_needs_input_and_attach_render_loop(tmp_path, store, templates, cfg):
     r = runner.invoke(main, ["render", str(post_json), str(result.run_dir / "sources.json"),
                              "--theme", "paper"])
     assert r.exit_code == 0, r.output
-    saved = Post.model_validate(json.loads(post_json.read_text()))
+    saved = Post.model_validate(json.loads(post_json.read_text(encoding="utf-8")))
     assert saved.draft.design.slides[1].image == str(pic.resolve())
     first = Image.open(result.run_dir / saved.image_paths[0])
     assert first.getpixel((2, 2)) != (15, 23, 42)  # re-rendered in the paper theme

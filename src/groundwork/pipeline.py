@@ -111,7 +111,7 @@ def design_post(post: Post, fmt, store: SourceStore, cfg: Config, run_dir: Path)
     post.image_paths = [str(p.relative_to(run_dir)) for p in imgs]
     extra = [sources_slide(post, store)] if post.draft.design.kind == "carousel" else []
     guide = run_dir / "canva" / f"{post.id}.md"
-    guide.write_text(canva_guide(post, size, cfg.theme, extra))
+    guide.write_text(canva_guide(post, size, cfg.theme, extra), encoding="utf-8")
     post.canva_guide_path = str(guide.relative_to(run_dir))
 
 
@@ -139,13 +139,13 @@ def run(topic: str, targets: list[str], cfg: Config, templates: dict[str, Platfo
     for sub in ("posts", "designs", "canva"):
         (run_dir / sub).mkdir(parents=True, exist_ok=True)
     store.save(run_dir / "sources.json")
-    (run_dir / "bibliography.md").write_text("# Sources\n\n" + store.bibliography() + "\n")
+    (run_dir / "bibliography.md").write_text("# Sources\n\n" + store.bibliography() + "\n", encoding="utf-8")
     result = RunResult(run_dir=run_dir, store=store)
     if len(store) == 0:
         log.error("No usable sources; refusing to write unsourced posts.")
         (run_dir / "report.md").write_text(
             f"# Run report: {topic}\n\nNo usable sources were found, so no posts were written. "
-            "Pass seed links with --url or check network access.\n")
+            "Pass seed links with --url or check network access.\n", encoding="utf-8")
         return result
 
     for tpl, fmt_name, fmt in parse_targets(targets, templates):
@@ -159,12 +159,13 @@ def run(topic: str, targets: list[str], cfg: Config, templates: dict[str, Platfo
     schedule(result.posts, templates, cfg.timezone, start=start)
     for post in result.posts:
         _, fmt = templates[post.draft.platform].format(post.draft.format)
-        (run_dir / "posts" / f"{post.id}.md").write_text(post_markdown(post, fmt, store))
-        (run_dir / "posts" / f"{post.id}.json").write_text(post.model_dump_json(indent=2))
-    (run_dir / "schedule.ics").write_text(to_ics(result.posts, run_dir))
+        (run_dir / "posts" / f"{post.id}.md").write_text(post_markdown(post, fmt, store), encoding="utf-8")
+        (run_dir / "posts" / f"{post.id}.json").write_text(post.model_dump_json(indent=2), encoding="utf-8")
+    # bytes, so Windows does not turn the iCalendar CRLF line endings into CR CR LF
+    (run_dir / "schedule.ics").write_bytes(to_ics(result.posts, run_dir).encode("utf-8"))
     to_csv(result.posts, run_dir / "schedule.csv")
-    (run_dir / "report.md").write_text(report(topic, result))
-    (run_dir / "needs_input.md").write_text(needs_input_md(result.posts))
+    (run_dir / "report.md").write_text(report(topic, result), encoding="utf-8")
+    (run_dir / "needs_input.md").write_text(needs_input_md(result.posts), encoding="utf-8")
     return result
 
 

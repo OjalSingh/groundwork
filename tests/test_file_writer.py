@@ -20,7 +20,7 @@ def test_file_writer_replays_revision_loop(tmp_path, store, templates, cfg):
     bad = draft("A server move touches 95% of keys.", "Nearly every key moves when a server is added.")
     good = draft("Only nearby keys move.", GOOD)
     f = tmp_path / "drafts.json"
-    f.write_text(json.dumps({"x:thread": [bad.model_dump(), good.model_dump()]}))
+    f.write_text(json.dumps({"x:thread": [bad.model_dump(), good.model_dump()]}), encoding="utf-8")
     (post,) = run("consistent hashing", ["x:thread"], cfg, templates, FileWriter(f), store,
                   tmp_path / "runs").posts
     assert post.revisions == 1 and post.status.value == "ready"
@@ -29,7 +29,7 @@ def test_file_writer_replays_revision_loop(tmp_path, store, templates, cfg):
 
 def test_missing_target_is_a_clear_error(tmp_path, store, templates, cfg):
     f = tmp_path / "d.json"
-    f.write_text(json.dumps({"linkedin:post": draft("a", GOOD).model_dump()}))
+    f.write_text(json.dumps({"linkedin:post": draft("a", GOOD).model_dump()}), encoding="utf-8")
     import pytest
     with pytest.raises(KeyError, match="x:thread"):
         run("t", ["x:thread"], cfg, templates, FileWriter(f), store, tmp_path / "r")
