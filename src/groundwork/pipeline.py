@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -97,9 +98,38 @@ def parse_targets(targets: list[str], templates: dict[str, PlatformTemplate]):
     return out
 
 
+def design_post(post: Post, fmt, store: SourceStore, cfg: Config, run_dir: Path) -> None:
+    """(Re)render a post's images and Canva guide into run_dir."""
+    if post.draft.design.kind == "none":
+        return
+    size = tuple(fmt.design.size)
+    imgs = render_post(post, store, size, cfg.theme, run_dir / "designs")
+    post.image_paths = [str(p.relative_to(run_dir)) for p in imgs]
+    extra = [sources_slide(post, store)] if post.draft.design.kind == "carousel" else []
+    guide = run_dir / "canva" / f"{post.id}.md"
+    guide.write_text(canva_guide(post, size, cfg.theme, extra))
+    post.canva_guide_path = str(guide.relative_to(run_dir))
+
+
+def needs_input_md(posts: list[Post]) -> str:
+    rows = []
+    for p in posts:
+        for i, s in enumerate(p.draft.design.slides, 1):
+            if s.visual and not s.image:
+                rows.append(f"- **{p.id}, slide {i}**: {s.visual}\n"
+                            f"  - Supply an image: `groundwork attach posts/{p.id}.json "
+                            f"--slide {i} --image path/to/file.png`, then "
+                            f"`groundwork render posts/{p.id}.json sources.json`\n"
+                            f"  - Or build it in Canva: see `{p.canva_guide_path}`")
+    if not rows:
+        return "# Needs your input\n\nNothing: every slide is fully rendered.\n"
+    return "# Needs your input\n\nThese slides need a diagram, icon or photo.\n\n" + "\n".join(rows) + "\n"
+
+
 def run(topic: str, targets: list[str], cfg: Config, templates: dict[str, PlatformTemplate],
         writer: Writer, store: SourceStore, out_root: Path, brief: str = "",
-        start: datetime | None = None) -> RunResult:
+        start: datetime | None = None,
+        before_design: Callable[[Post], None] | None = None) -> RunResult:
     stamp = (start or datetime.now(timezone.utc)).strftime("%Y-%m-%d")
     run_dir = out_root / f"{stamp}-{slugify(topic)}"
     for sub in ("posts", "designs", "canva"):
@@ -117,14 +147,9 @@ def run(topic: str, targets: list[str], cfg: Config, templates: dict[str, Platfo
     for tpl, fmt_name, fmt in parse_targets(targets, templates):
         req = WriteRequest(topic, brief, cfg.voice, store, tpl, fmt_name, fmt)
         post = produce(req, writer, cfg, f"{tpl.name}-{fmt_name}-{slugify(topic)[:30]}")
-        if post.draft.design.kind != "none":
-            size = tuple(fmt.design.size)
-            imgs = render_post(post, store, size, cfg.theme, run_dir / "designs")
-            post.image_paths = [str(p.relative_to(run_dir)) for p in imgs]
-            extra = [sources_slide(post, store)] if post.draft.design.kind == "carousel" else []
-            guide = run_dir / "canva" / f"{post.id}.md"
-            guide.write_text(canva_guide(post, size, cfg.theme, extra))
-            post.canva_guide_path = str(guide.relative_to(run_dir))
+        if before_design:
+            before_design(post)  # e.g. ask the user for images
+        design_post(post, fmt, store, cfg, run_dir)
         result.posts.append(post)
 
     schedule(result.posts, templates, cfg.timezone, start=start)
@@ -135,6 +160,7 @@ def run(topic: str, targets: list[str], cfg: Config, templates: dict[str, Platfo
     (run_dir / "schedule.ics").write_text(to_ics(result.posts, run_dir))
     to_csv(result.posts, run_dir / "schedule.csv")
     (run_dir / "report.md").write_text(report(topic, result))
+    (run_dir / "needs_input.md").write_text(needs_input_md(result.posts))
     return result
 
 

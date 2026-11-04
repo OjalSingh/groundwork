@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from html import unescape
 from html.parser import HTMLParser
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -67,6 +68,29 @@ def html_to_text(html: str) -> tuple[str, str, dict[str, str]]:
     return title, text, parser.meta
 
 
+_COMMENT_PREFIX = re.compile(r"(?m)^[ \t]*(?:\*|//|///)[ \t]?")
+_INLINE_TAG = re.compile(r"\{@(?:code|link|linkplain|literal)\s+([^}]*)\}")
+
+
+def clean_plain(text: str) -> str:
+    """Make source code comments and markup quotable: drop `*` / `//` prefixes and {@code x}."""
+    return _INLINE_TAG.sub(r"\1", _COMMENT_PREFIX.sub("", text))
+
+
+def plain_title(url: str, text: str) -> str:
+    for line in text.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    return url.rstrip("/").rsplit("/", 1)[-1]
+
+
+def plain_publisher(url: str) -> str:
+    parts = urlsplit(url)
+    if parts.netloc == "raw.githubusercontent.com":
+        return "/".join(parts.path.strip("/").split("/")[:2])
+    return parts.netloc
+
+
 def fetch(url: str, client: httpx.Client | None = None, timeout: float = 20.0) -> httpx.Response:
     own = client is None
     client = client or httpx.Client(
@@ -89,4 +113,5 @@ def fetch_text(url: str, client: httpx.Client | None = None) -> tuple[str, str, 
         raise httpx.HTTPError(f"PDF not supported yet: {url}")
     if "html" in ctype or resp.text.lstrip().startswith("<"):
         return html_to_text(resp.text)
-    return url, resp.text, {}
+    return plain_title(url, resp.text), clean_plain(resp.text), {
+        "og:site_name": plain_publisher(url)}

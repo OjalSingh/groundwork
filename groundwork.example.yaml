@@ -14,11 +14,11 @@ templates_dir: templates      # your per-platform YAML overrides
 model: claude-opus-5-5
 effort: high
 max_revisions: 2
-theme:
-  background: "#0F172A"
-  foreground: "#F8FAFC"
-  accent: "#38BDF8"
-  muted: "#94A3B8"
-  heading_font: Inter
-  body_font: Inter
+theme_preset: midnight        # midnight | paper | terracotta | forest | mono | sunrise | yours
+themes_dir: themes            # your own preset YAMLs (optional)
+theme:                        # any field here overrides the preset
   handle: "@yourhandle"
+  # accent: "#38BDF8"
+  # align: left               # left | center
+  # accent_style: bar         # bar | underline | block | none
+  # cover_style: same         # same | inverted

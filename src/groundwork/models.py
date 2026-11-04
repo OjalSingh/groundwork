@@ -44,6 +44,11 @@ class Slide(BaseModel):
         "produce, described concretely (e.g. 'three boxes: client -> load balancer -> two "
         "app servers'). Leave empty for text-only slides.",
     )
+    image: str = Field(
+        default="",
+        description="Path to an image you supplied for this slide's visual. Set by "
+        "`groundwork attach`, never by the writer.",
+    )
 
 
 class DesignSpec(BaseModel):

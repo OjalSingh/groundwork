@@ -22,12 +22,28 @@ def _px(fraction: float, total: int) -> int:
     return int(fraction * total)
 
 
+def _accent_step(theme: Theme, w: int, h: int, m: int) -> list[str]:
+    bar_h = max(6, h // 160)
+    if theme.accent_style == "bar":
+        return [f"1. Accent bar: **Elements**, search \"square\", add one, colour **{theme.accent}**. "
+                f"In **Position**, set W {_px(0.12, w)}, H {bar_h}, "
+                f"X {(w - _px(0.12, w)) // 2 if theme.align == 'center' else m}, Y {m}."]
+    if theme.accent_style == "block":
+        return [f"1. Top strip: **Elements**, search \"square\", add one, colour **{theme.accent}**. "
+                f"Set W {w}, H {_px(0.025, h)}, X 0, Y 0."]
+    if theme.accent_style == "underline":
+        return [f"1. Accent underline: add a **square** element in **{theme.accent}**, W "
+                f"{_px(0.18, w)}, H {bar_h}, placed directly under the heading on each page."]
+    return ["1. This theme has no accent shape; skip to the text boxes."]
+
+
 def canva_guide(post: Post, size: tuple[int, int], theme: Theme,
                 extra_slides: list[Slide] | None = None) -> str:
     spec = post.draft.design
     slides = list(spec.slides) + list(extra_slides or [])
     w, h = size
     m = _px(0.08, w)
+    align = theme.align
     export = EXPORT.get((post.draft.platform, post.draft.format), "PNG")
     out = [
         f"# Canva steps for {post.id}",
@@ -46,23 +62,26 @@ def canva_guide(post: Post, size: tuple[int, int], theme: Theme,
         "",
         "## 2. Build the first page as a template",
         "",
-        f"1. Accent bar: **Elements**, search \"square\", add one, set its colour to "
-        f"**{theme.accent}**. In **Position**, set W {_px(0.12, w)}, H {max(6, h // 160)}, "
-        f"X {m}, Y {m}.",
-        "2. Heading: **Text** > **Add a heading**. Colour "
-        f"**{theme.foreground}**, size about {_px(0.075, h) * 3 // 4} pt, left aligned, "
+        *_accent_step(theme, w, h, m),
+        f"2. Heading: **Text** > **Add a heading**. Colour "
+        f"**{theme.foreground}**, size about {_px(0.075, h) * 3 // 4} pt, {align} aligned, "
         f"X {m}, Y {m + _px(0.05, h)}, width {w - 2 * m}.",
         f"3. Body: **Text** > **Add a little bit of body text**. Colour **{theme.foreground}**, "
-        f"size about {_px(0.042, h) * 3 // 4} pt, same left edge and width as the heading.",
+        f"size about {_px(0.042, h) * 3 // 4} pt, {align} aligned, same left edge and width as "
+        "the heading.",
         f"4. Footer: small text (about {max(16, h // 60) * 3 // 4} pt) in **{theme.muted}** "
-        f"at the bottom left" + (f" reading **{theme.handle}**" if theme.handle else "")
-        + (", and a page counter at the bottom right." if len(slides) > 1 else "."),
+        f"at the bottom {'centre' if theme.align == 'center' else 'left'}"
+        + (f" reading **{theme.handle}**" if theme.handle else "")
+        + (", and a page counter at the bottom right."
+           if len(slides) > 1 and theme.slide_counter else "."),
     ]
     if len(slides) > 1:
-        out += ["5. When page 1 looks right, click **Duplicate page** "
-                f"{len(slides) - 1} times so every page shares the layout.", ""]
-    else:
-        out.append("")
+        out.append("5. When page 1 looks right, click **Duplicate page** "
+                   f"{len(slides) - 1} times so every page shares the layout.")
+        if theme.cover_style == "inverted":
+            out.append(f"6. Cover page (page 1) only: set its background to **{theme.accent}** "
+                       f"and recolour all its text to **{theme.background}**.")
+    out.append("")
     out += ["## 3. Fill each page", ""]
     for i, s in enumerate(slides, 1):
         out.append(f"### Page {i}" + (f" of {len(slides)}" if len(slides) > 1 else ""))

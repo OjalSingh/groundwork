@@ -55,59 +55,96 @@ def _fit(draw, text, theme, weight, width, max_height, start, minimum=18):
     return font, _wrap(draw, text, font, width), minimum
 
 
+def _draw_lines(d, lines, font, fs, x, y, width, theme, fill, step=1.3):
+    for line in lines:
+        if theme.align == "center":
+            d.text((x + width / 2, y), line, font=font, fill=fill, anchor="ma")
+        else:
+            d.text((x, y), line, font=font, fill=fill)
+        y += int(fs * step)
+    return y
+
+
+def _paste_image(img: Image.Image, path: str, box: tuple[int, int, int, int]) -> bool:
+    try:
+        pic = Image.open(path).convert("RGBA")
+    except OSError:
+        return False
+    x0, y0, x1, y1 = box
+    pic.thumbnail((x1 - x0, y1 - y0))
+    img.paste(pic, (x0 + (x1 - x0 - pic.width) // 2, y0 + (y1 - y0 - pic.height) // 2), pic)
+    return True
+
+
 def render_slide(slide: Slide, size: tuple[int, int], theme: Theme, index: int, total: int,
                  kind: str) -> Image.Image:
     w, h = size
+    if index == 1 and theme.cover_style == "inverted" and total > 1 or (
+            kind in ("quote_card", "header") and theme.cover_style == "inverted"):
+        theme = theme.inverted()
     img = Image.new("RGB", size, theme.background)
     d = ImageDraw.Draw(img)
     m = int(w * MARGIN)
     inner = w - 2 * m
     y = m
+    center = theme.align == "center"
+    bar_w, bar_h = int(w * 0.12), max(6, h // 160)
+    bar_x = (w - bar_w) // 2 if center else m
 
-    d.rectangle([m, y, m + int(w * 0.12), y + max(6, h // 160)], fill=theme.accent)
+    if theme.accent_style == "bar":
+        d.rectangle([bar_x, y, bar_x + bar_w, y + bar_h], fill=theme.accent)
+    elif theme.accent_style == "block":
+        d.rectangle([0, 0, w, int(h * 0.025)], fill=theme.accent)
     y += int(h * 0.05)
+
+    if theme.logo and Path(theme.logo).exists():
+        lh = int(h * 0.05)
+        _paste_image(img, theme.logo, (w - m - lh * 3, m - lh // 2, w - m, m + lh))
 
     if kind == "quote_card":
         qfont = _font(theme, "bold", int(h * 0.15))
-        d.text((m, y - int(h * 0.02)), "“", font=qfont, fill=theme.accent)
+        d.text((w / 2 if center else m, y - int(h * 0.02)), "\u201c", font=qfont,
+               fill=theme.accent, anchor="ma" if center else "la")
         y += int(h * 0.12)
 
     if slide.heading:
         font, lines, fs = _fit(d, slide.heading, theme, "bold", inner, h * 0.28, int(h * 0.075))
-        for line in lines:
-            d.text((m, y), line, font=font, fill=theme.foreground)
-            y += int(fs * 1.25)
+        y = _draw_lines(d, lines, font, fs, m, y, inner, theme, theme.foreground, 1.25)
+        if theme.accent_style == "underline":
+            uw = int(w * 0.18)
+            ux = (w - uw) // 2 if center else m
+            d.rectangle([ux, y + 4, ux + uw, y + 4 + bar_h], fill=theme.accent)
+            y += bar_h + 10
         y += int(h * 0.03)
 
     footer_h = int(h * 0.1)
-    visual_h = int(h * 0.3) if slide.visual else 0
+    visual_h = int(h * 0.3) if (slide.visual or slide.image) else 0
     if slide.body:
         avail = h - y - m - footer_h - visual_h
         start = int(h * (0.05 if kind == "quote_card" else 0.042))
         font, lines, fs = _fit(d, slide.body, theme, "regular", inner, avail, start)
-        for line in lines:
-            d.text((m, y), line, font=font, fill=theme.foreground)
-            y += int(fs * 1.3)
+        _draw_lines(d, lines, font, fs, m, y, inner, theme, theme.foreground)
 
-    if slide.visual:
+    if visual_h:
         top = h - m - footer_h - visual_h + int(h * 0.02)
-        d.rounded_rectangle([m, top, w - m, top + visual_h - int(h * 0.03)], radius=16,
-                            outline=theme.muted, width=3)
-        f = _font(theme, "regular", max(18, h // 50))
-        label = _wrap(d, "Visual to add in Canva: " + slide.visual, f, inner - 40)
-        for i, line in enumerate(label[:4]):
-            d.text((m + 20, top + 20 + i * int(h / 40)), line, font=f, fill=theme.muted)
+        box = (m, top, w - m, top + visual_h - int(h * 0.03))
+        if not (slide.image and _paste_image(img, slide.image, box)):
+            d.rounded_rectangle(box, radius=16, outline=theme.muted, width=3)
+            f = _font(theme, "regular", max(18, h // 50))
+            label = _wrap(d, "Visual to add in Canva: " + slide.visual, f, inner - 40)
+            for i, line in enumerate(label[:4]):
+                d.text((m + 20, top + 20 + i * int(h / 40)), line, font=f, fill=theme.muted)
 
     small = _font(theme, "regular", max(16, h // 60))
     if slide.footnote:
-        d.text((m, h - m - int(h * 0.045)), slide.footnote, font=small, fill=theme.muted)
-    footer = theme.handle
-    if total > 1:
+        pos = (w / 2, h - m - int(h * 0.045)) if center else (m, h - m - int(h * 0.045))
+        d.text(pos, slide.footnote, font=small, fill=theme.muted, anchor="ma" if center else "la")
+    if theme.slide_counter and total > 1:
         counter = f"{index}/{total}"
-        d.text((w - m - d.textlength(counter, font=small), h - m), counter, font=small,
-               fill=theme.muted, anchor="ls")
-    if footer:
-        d.text((m, h - m), footer, font=small, fill=theme.muted, anchor="ls")
+        d.text((w - m, h - m), counter, font=small, fill=theme.muted, anchor="rs")
+    if theme.handle:
+        d.text((w / 2 if center else m, h - m), theme.handle, font=small, fill=theme.muted,
+               anchor="ms" if center else "ls")
     return img
 
 

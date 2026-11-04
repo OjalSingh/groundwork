@@ -1,0 +1,9 @@
+description: Black and white with monospaced type. Blueprint / terminal feel.
+background: "#0A0A0A"
+foreground: "#F5F5F5"
+accent: "#FFFFFF"
+muted: "#8A8A8A"
+heading_font: JetBrains Mono
+body_font: JetBrains Mono
+font_family: mono
+accent_style: none

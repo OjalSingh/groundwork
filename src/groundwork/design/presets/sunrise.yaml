@@ -1,0 +1,10 @@
+description: Light, bright, centred layout with a coral accent. Good for quote cards.
+background: "#FFF7ED"
+foreground: "#2B2118"
+accent: "#C2410C"
+muted: "#9A8575"
+heading_font: DM Sans
+body_font: DM Sans
+font_family: sans
+align: center
+cover_style: inverted

@@ -1,0 +1,9 @@
+description: Dark green with a lime accent. Grounded, a bit hacker.
+background: "#0E2A1F"
+foreground: "#EAF5EC"
+accent: "#A3E635"
+muted: "#7FA38D"
+heading_font: Space Grotesk
+body_font: Inter
+font_family: sans
+accent_style: block

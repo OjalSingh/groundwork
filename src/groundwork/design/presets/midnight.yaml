@@ -1,0 +1,8 @@
+description: Deep navy with a sky-blue accent. Technical, calm, high contrast.
+background: "#0F172A"
+foreground: "#F8FAFC"
+accent: "#38BDF8"
+muted: "#94A3B8"
+heading_font: Inter
+body_font: Inter
+font_family: sans

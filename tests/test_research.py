@@ -68,3 +68,14 @@ def test_wikipedia_collector_with_mock(monkeypatch):
                         lambda: httpx.Client(transport=httpx.MockTransport(handler)))
     (s,) = collectors.WikipediaCollector().collect("consistent hashing", 1)
     assert s.publisher == "Wikipedia" and s.text == extract
+
+
+def test_plain_text_sources_are_made_quotable():
+    from groundwork.research.fetch import clean_plain, plain_publisher, plain_title
+    raw = ("  * {@code consistentHash} will be a poor fit: It provides\n"
+           "  *       no way to say which bucket is going away.\n// note")
+    assert "consistentHash will be a poor fit: It provides no way".split()[0] in clean_plain(raw)
+    assert "* " not in clean_plain(raw) and "{@code" not in clean_plain(raw)
+    url = "https://raw.githubusercontent.com/envoyproxy/envoy/main/docs/x.rst"
+    assert plain_publisher(url) == "envoyproxy/envoy" and plain_title(url, "text") == "x.rst"
+    assert plain_title(url, "# Consistent\nbody") == "Consistent"

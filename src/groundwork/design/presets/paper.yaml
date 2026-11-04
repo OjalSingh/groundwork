@@ -1,0 +1,9 @@
+description: Warm off-white, ink text, serif headings. Editorial, essay-like.
+background: "#FAF6EE"
+foreground: "#1F1B16"
+accent: "#B4412E"
+muted: "#7A7167"
+heading_font: Playfair Display
+body_font: Source Serif 4
+font_family: serif
+accent_style: underline

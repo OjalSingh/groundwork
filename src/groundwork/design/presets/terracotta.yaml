@@ -1,0 +1,9 @@
+description: Clay background, cream text. Friendly and warm without being cute.
+background: "#A8431F"
+foreground: "#FFF4E8"
+accent: "#FFE8CC"
+muted: "#F7D3BC"
+heading_font: Poppins
+body_font: Inter
+font_family: sans
+cover_style: inverted

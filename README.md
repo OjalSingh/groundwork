@@ -84,6 +84,41 @@ When a slide needs something text rendering can't do (a diagram, an icon, a phot
 writer fills `visual` with a concrete description. The PNG gets a labelled placeholder
 and the Canva guide spells out how to build it.
 
+## Design: themes, questions and your own images
+
+Six presets ship in `src/groundwork/design/presets/`: `midnight`, `paper`, `terracotta`,
+`forest`, `mono`, `sunrise`. A theme is colours, fonts (the names Canva should use),
+alignment, accent shape (bar, underline, block, none), an optional inverted cover slide,
+slide counter, handle and logo.
+
+```bash
+groundwork theme list
+groundwork theme preview paper --set accent=#0F766E        # 3 sample slides -> theme-preview.png
+groundwork theme save brand --from paper --set handle=@me   # writes themes/brand.yaml, makes it active
+groundwork design                                           # interactive: pick, preview, tweak, save
+groundwork run "topic" -p instagram:carousel --theme forest # one-off theme
+groundwork run "topic" -p instagram:carousel --ask          # asks design questions, then asks for
+                                                            # an image for any slide that needs one
+```
+
+The wizard checks readability as you go (text, muted text, accent and inverted-cover
+contrast) and warns before you save an unreadable theme. Your own presets are YAML files in
+`themes_dir`, same format as the built-ins.
+
+When a slide needs a diagram, icon or photo the writer describes it. The run writes
+`needs_input.md`; supply your own file and re-render:
+
+```bash
+groundwork attach runs/<run>/posts/<post>.json --slide 3 --image ring-diagram.png
+groundwork render runs/<run>/posts/<post>.json runs/<run>/sources.json [--theme paper]
+```
+
+## Bring your own drafts
+
+Wrote the posts yourself, or want another tool to? `--drafts drafts.json` (keyed by
+`platform:format`) skips the model and runs your text through the same grounding, slop
+checks, design and scheduling.
+
 ## Platform templates are data
 
 Each platform is a YAML file in `src/groundwork/platforms/templates/`: formats, part
