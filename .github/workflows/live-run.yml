@@ -1,0 +1,62 @@
+name: Live run
+# Runs the real pipeline (research + Claude) using the ANTHROPIC_API_KEY repository secret
+# and uploads everything it produces as an artifact. Trigger from the Actions tab.
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: Topic to research and write about
+        required: true
+        default: how DNS caching works
+      platforms:
+        description: Space-separated targets, e.g. "x:thread linkedin:post instagram:carousel"
+        required: true
+        default: x:thread linkedin:post instagram:carousel
+      brief:
+        description: Angle or takeaway you want (optional)
+        required: false
+        default: ""
+      urls:
+        description: Space-separated seed URLs (optional)
+        required: false
+        default: ""
+      theme:
+        description: Theme preset
+        required: false
+        default: midnight
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e '.[claude]'
+      - name: Check the secret exists (value is never printed)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::error::Repository secret ANTHROPIC_API_KEY is not set"; exit 1
+          fi
+          echo "ANTHROPIC_API_KEY is set (${#ANTHROPIC_API_KEY} characters)"
+      - name: Run groundwork
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          TOPIC: ${{ inputs.topic }}
+          PLATFORMS: ${{ inputs.platforms }}
+          BRIEF: ${{ inputs.brief }}
+          URLS: ${{ inputs.urls }}
+          THEME: ${{ inputs.theme }}
+        run: |
+          args=()
+          for p in $PLATFORMS; do args+=(-p "$p"); done
+          for u in $URLS; do args+=(--url "$u"); done
+          groundwork -v run "$TOPIC" "${args[@]}" --brief "$BRIEF" --theme "$THEME" -o runs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: live-run
+          path: runs/
