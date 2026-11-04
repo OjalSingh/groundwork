@@ -62,7 +62,18 @@ groundwork run "consistent hashing in load balancers" \
 Open `runs/<date>-.../report.md`, then one of the files in `posts/`, the PNGs in `designs/`
 and `canva/*.md`. Try breaking a quote in `drafts.json` and re-running to see it get caught.
 
-**Test 3: the real thing, with Claude.**
+**Test 3: free, with any chatbot (no API key).**
+
+```bash
+groundwork prompt "how DNS caching works" -p x:thread -p linkedin:post \
+  --url <a good source URL> --url <another>
+```
+
+Paste each `manual/prompt-*.md` into a chatbot, save each reply to a text file, then
+`groundwork import reply-x.txt reply-li.txt --topic "how DNS caching works" --sources manual/sources.json`.
+If a check fails, paste the generated `posts/fix-*.md` back into the same chat and import again.
+
+**Test 4: the real thing, with Claude (needs API credit).**
 
 ```bash
 export ANTHROPIC_API_KEY=sk-ant-...           # Windows PowerShell: $env:ANTHROPIC_API_KEY="..."

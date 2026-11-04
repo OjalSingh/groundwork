@@ -163,6 +163,86 @@ def check_cmd(cfg: Config, post_json: Path, sources_json: Path):
     raise SystemExit(1 if any(f.severity.value == "error" for f in findings) else 0)
 
 
+@main.command("prompt")
+@click.argument("topic")
+@click.option("-p", "--platform", "targets", multiple=True, required=True,
+              help="platform or platform:format (repeatable).")
+@click.option("--brief", default="", help="What angle or takeaway you want.")
+@click.option("--url", "urls", multiple=True, help="Seed URL to include (repeatable).")
+@click.option("--sources", "sources_file", type=click.Path(exists=True, path_type=Path))
+@click.option("-o", "--out", type=click.Path(path_type=Path), default=Path("manual"))
+@click.pass_obj
+def prompt_cmd(cfg: Config, topic, targets, brief, urls, sources_file, out):
+    """Write chatbot prompts (one per platform) for the copy-paste, no-API workflow."""
+    from groundwork.llm.base import WriteRequest
+    from groundwork.manual import build_prompt
+    from groundwork.pipeline import parse_targets, research, slugify
+
+    templates = _templates(cfg)
+    store = SourceStore.load(sources_file) if sources_file else research(
+        topic, cfg, list(urls), None)  # no web search: that needs an API key
+    if len(store) == 0:
+        raise click.ClickException("No usable sources. Pass links with --url (or --sources).")
+    out.mkdir(parents=True, exist_ok=True)
+    store.save(out / "sources.json")
+    click.echo(store.bibliography() + "\n")
+    for tpl, fmt_name, fmt in parse_targets(list(targets), templates):
+        req = WriteRequest(topic, brief, cfg.voice, store, tpl, fmt_name, fmt)
+        path = out / f"prompt-{tpl.name}-{fmt_name}.md"
+        path.write_text(build_prompt(req))
+        click.echo(f"Wrote {path}")
+    click.echo(
+        "\nNext: paste each prompt into a chatbot, save its reply as a text file, then run:\n"
+        f"  groundwork import reply1.txt reply2.txt --topic \"{topic}\" "
+        f"--sources {out / 'sources.json'}  (slug: {slugify(topic)})")
+
+
+@main.command("import")
+@click.argument("replies", nargs=-1, required=True, type=click.Path(exists=True, path_type=Path))
+@click.option("--topic", required=True)
+@click.option("--sources", "sources_file", required=True,
+              type=click.Path(exists=True, path_type=Path))
+@click.option("--theme", "theme_name", help="Theme preset for this run.")
+@click.option("-o", "--out", type=click.Path(path_type=Path), default=Path("runs"))
+@click.pass_obj
+def import_cmd(cfg: Config, replies, topic, sources_file, theme_name, out):
+    """Verify, design and schedule posts a chatbot wrote from `groundwork prompt`."""
+    from groundwork.manual import StaticWriter, fix_message, parse_draft
+    from groundwork.pipeline import run
+
+    drafts, problems = {}, 0
+    for path in replies:
+        try:
+            d = parse_draft(path.read_text())
+        except ValueError as exc:
+            problems += 1
+            click.echo(f"{path}: {exc}.\n  Paste this back into the chat: \"Your reply was not "
+                       f"usable: {exc}. Reply with the complete corrected JSON object only.\"")
+            continue
+        drafts[f"{d.platform}:{d.format}"] = d
+    if not drafts:
+        raise SystemExit(1)
+    templates = _templates(cfg)
+    for key in drafts:
+        if key.split(":")[0] not in templates:
+            raise click.ClickException(f"Reply is for unknown platform {key!r}.")
+    if theme_name:
+        cfg.theme = _switch_theme(cfg, theme_name)
+    cfg.max_revisions = 0  # the chatbot does the revising: we hand back the findings instead
+    result = run(topic, list(drafts), cfg, templates, StaticWriter(drafts),
+                 SourceStore.load(sources_file), out)
+    click.echo((result.run_dir / "report.md").read_text())
+    for post in result.posts:
+        if post.errors:
+            fix = result.run_dir / "posts" / f"fix-{post.id}.md"
+            fix.write_text(fix_message(post.findings))
+            click.echo(f"{post.id} needs a fix: paste {fix} into the same chat, save the new "
+                       "reply, and import again.")
+            problems += 1
+    click.echo(f"Output: {result.run_dir}")
+    raise SystemExit(1 if problems else 0)
+
+
 @main.group()
 def theme():
     """Themes: list presets, preview, tweak, save your own."""

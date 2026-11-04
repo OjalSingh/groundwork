@@ -113,6 +113,22 @@ groundwork attach runs/<run>/posts/<post>.json --slide 3 --image ring-diagram.pn
 groundwork render runs/<run>/posts/<post>.json runs/<run>/sources.json [--theme paper]
 ```
 
+## Free mode: any chatbot as the writer
+
+No API key or credits needed. The checks, designs and scheduling are identical.
+
+```bash
+groundwork prompt "how DNS caching works" -p x:thread -p linkedin:post \
+  --url https://example.com/good-source --url https://example.com/another
+# -> manual/prompt-x-thread.md, manual/prompt-linkedin-post.md, manual/sources.json
+# paste each prompt into a chatbot (free Claude chat, Gemini, ChatGPT), save each reply as a text file
+groundwork import reply-x.txt reply-li.txt --topic "how DNS caching works" \
+  --sources manual/sources.json [--theme paper]
+```
+
+If a post fails a check, `import` writes `posts/fix-<id>.md`. Paste it into the same chat,
+save the new reply, and import again. Seed it with `--url` links: free mode has no web search.
+
 ## Bring your own drafts
 
 Wrote the posts yourself, or want another tool to? `--drafts drafts.json` (keyed by
